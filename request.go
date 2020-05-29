@@ -18,7 +18,7 @@ var (
 	// ErrAccessKeyEmpty ak为空
 	ErrAccessKeyEmpty = newError("accesskey为空")
 	// ErrSecretKeyEmpty sk为空
-	ErrSecretKeyEmpty = newError("secretkey为空")
+	ErrSecretKeyEmpty = newError("accesskey无效")
 )
 
 // NewRequestFunc 返回一个RequestFunc
