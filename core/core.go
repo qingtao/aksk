@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// KeyFunc 查询accesskey,返回secretKey的函数
+type KeyFunc func(accessKey string) (secretKey string)
+
 // HashFunc 返回一个hash.Hash接口
 type HashFunc func() hash.Hash
 
@@ -35,19 +38,6 @@ func (h *hexEncoder) EncodeToString(b []byte) string {
 func (h *hexEncoder) DecodeString(s string) ([]byte, error) {
 	return hex.DecodeString(s)
 }
-
-const (
-	// HeaderAccessKey accesskey
-	HeaderAccessKey = `x-auth-access-key`
-	// HeaderTimestramp 访问时间戳, 前1分钟或者后5分钟之内有效
-	HeaderTimestramp = `x-auth-timestramp`
-	// HeaderSignature hmac的签名,值取决于hash算法和编码规则
-	HeaderSignature = `x-auth-signature`
-	// HeaderBodyHash Body的hash值,值取决于hash算法
-	HeaderBodyHash = `x-auth-body-hash`
-	// HeaderRandomStr 随机字符串
-	HeaderRandomStr = `x-auth-random-str`
-)
 
 // Auth 核心功能
 type Auth struct {

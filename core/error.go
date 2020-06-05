@@ -1,6 +1,8 @@
 package core
 
-import "fmt"
+import (
+	"strings"
+)
 
 const (
 	// timestrampExpired 时间戳过期
@@ -27,21 +29,17 @@ type Error struct {
 
 func (e *Error) Error() string {
 	if e == nil {
-		return "nil"
+		return "<nil>"
 	}
+	var buf strings.Builder
 	if e.Message != "" {
-		return fmt.Sprintf("%s: %s", e.Message, e.Err)
+		buf.WriteString(e.Message)
+		buf.WriteString(": ")
 	}
-	return e.Err.Error()
+	if e.Err != nil {
+		buf.WriteString(e.Err.Error())
+	}
+	return buf.String()
 }
 
-func (e *Error) Unwrap() error {
-	if e == nil {
-		return nil
-	}
-	return e.Err
-}
-
-func (e *Error) String() string {
-	return e.Message
-}
+func (e *Error) Unwrap() error { return e.Err }
