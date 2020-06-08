@@ -3,7 +3,6 @@ package httpaksk
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 
@@ -18,10 +17,7 @@ func defaultErrorHandler(w http.ResponseWriter, err error) {
 	if err == nil {
 		return
 	}
-	var e *core.Error
-	if !errors.As(err, &e) {
-		e = &core.Error{Message: "未知错误", Err: err}
-	}
+	e := &core.Error{Message: err.Error(), Err: nil}
 	b, _ := json.Marshal(e)
 	w.Header().Set("Context-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
@@ -63,7 +59,7 @@ func New(c Config, opts ...core.Options) *Middleware {
 // WrapHandler 验证请求, 成功后调用handler.ServeHTTP(w,r)
 func (m *Middleware) WrapHandler(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := m.validRequest(r); err != nil {
+		if err := m.ValidRequest(r); err != nil {
 			m.errorHandler(w, err)
 			return
 		}
@@ -74,7 +70,7 @@ func (m *Middleware) WrapHandler(handler http.Handler) http.HandlerFunc {
 // WrapHandlerFunc 验证请求, 成功后调用handler(w,r)
 func (m *Middleware) WrapHandlerFunc(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := m.validRequest(r); err != nil {
+		if err := m.ValidRequest(r); err != nil {
 			m.errorHandler(w, err)
 			return
 		}
@@ -82,7 +78,8 @@ func (m *Middleware) WrapHandlerFunc(handler http.HandlerFunc) http.HandlerFunc 
 	}
 }
 
-func (m *Middleware) validRequest(r *http.Request) error {
+// ValidRequest 校验请求的签名是否有效
+func (m *Middleware) ValidRequest(r *http.Request) error {
 	ak := r.Header.Get(request.HeaderAccessKey)
 	if ak == "" {
 		return &core.Error{Message: request.AccessKeyEmpty}

@@ -2,7 +2,6 @@ package ginaksk
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
 	"net/http"
 
@@ -18,12 +17,8 @@ func handleError(c *gin.Context, err error) {
 	if err == nil {
 		return
 	}
-	var e *core.Error
-	if errors.As(err, &e) {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, e)
-		return
-	}
-	c.AbortWithError(http.StatusUnauthorized, err)
+	e := &core.Error{Message: err.Error(), Err: nil}
+	c.AbortWithStatusJSON(http.StatusUnauthorized, e)
 }
 
 // Validate 返回一个验证请求的gin中间件, keyFn指定了查询SecretKey的函数,如果等于nil,将panic; 如果skipBody为true, 跳过检查body的hash值是否一致; fn不为nil时,使用自定义的错误处理函数

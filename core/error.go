@@ -24,7 +24,7 @@ type Error struct {
 	// 错误消息
 	Message string `json:"message"`
 	// 内部错误
-	Err error `json:"error"`
+	Err error `json:"-"`
 }
 
 func (e *Error) Error() string {
@@ -34,9 +34,9 @@ func (e *Error) Error() string {
 	var buf strings.Builder
 	if e.Message != "" {
 		buf.WriteString(e.Message)
-		buf.WriteString(": ")
 	}
 	if e.Err != nil {
+		buf.WriteString(": ")
 		buf.WriteString(e.Err.Error())
 	}
 	return buf.String()

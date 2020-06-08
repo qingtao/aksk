@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -57,7 +56,7 @@ func NewHandlerFunc(ak, sk string, opts ...core.Options) (HandlerFunc, error) {
 		if _, err := io.ReadFull(rand.Reader, b); err != nil {
 			return nil, fmt.Errorf("读取随机字符串发生错误:%w", err)
 		}
-		randomstr := hex.EncodeToString(b)
+		randomstr := auth.EncodeToString(b)
 
 		ss := make([]string, 0, 4)
 		ss = append(ss, ak, randomstr)
