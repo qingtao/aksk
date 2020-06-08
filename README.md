@@ -16,7 +16,7 @@ ginaksk 默认使用 sha256.New 作为 hmac.New 的 hash.Hash 类型;
 
 | 名称              | 说明                        |
 | ----------------- | --------------------------- |
-| x-auth-accesskey  | 客户端的访问密钥            |
+| x-auth-access-key | 客户端的访问密钥            |
 | x-auth-timestramp | 请求发起时的时间戳,单位: 秒 |
 | x-auth-signature  | 请求的签名                  |
 | x-auth-body-hash  | 请求的 Body 的 Hash 值      |
