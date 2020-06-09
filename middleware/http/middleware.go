@@ -1,9 +1,7 @@
-package httpaksk
+package http
 
 import (
-	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/antlinker/aksk/core"
@@ -17,7 +15,7 @@ func defaultErrorHandler(w http.ResponseWriter, err error) {
 	if err == nil {
 		return
 	}
-	e := &core.Error{Message: err.Error(), Err: nil}
+	e := &core.Error{Message: err.Error()}
 	b, _ := json.Marshal(e)
 	w.Header().Set("Context-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
@@ -40,14 +38,14 @@ type Config struct {
 }
 
 // New 新建一个中间件
-func New(c Config, opts ...core.Options) *Middleware {
-	if c.KeyFn == nil {
-		panic("keyFn is nil")
+func New(cfg Config, opts ...core.Options) *Middleware {
+	if cfg.KeyFn == nil {
+		panic("Config.KeyFn is nil")
 	}
 	middleware := &Middleware{
-		keyFn:        c.KeyFn,
-		skipBody:     c.SkipBody,
-		errorHandler: c.ErrorHandler,
+		keyFn:        cfg.KeyFn,
+		skipBody:     cfg.SkipBody,
+		errorHandler: cfg.ErrorHandler,
 		auth:         core.New(opts...),
 	}
 	if middleware.errorHandler == nil {
@@ -88,8 +86,8 @@ func (m *Middleware) ValidRequest(r *http.Request) error {
 	if sk == "" {
 		return &core.Error{Message: request.SecretKeyEmpty}
 	}
-	ts := r.Header.Get(request.HeaderTimestramp)
-	if err := m.auth.ParseTimestramp(ts); err != nil {
+	ts := r.Header.Get(request.HeaderTimestamp)
+	if err := m.auth.ParseTimestamp(ts); err != nil {
 		return err
 	}
 	signature := r.Header.Get(request.HeaderSignature)
@@ -104,20 +102,9 @@ func (m *Middleware) ValidRequest(r *http.Request) error {
 	if m.skipBody {
 		return nil
 	}
-	b, err := readBody(r)
+	b, err := request.ReadBody(r)
 	if err != nil {
 		return err
 	}
 	return m.auth.ValidBody(b, bodyhash)
-}
-
-// readBody 读取body
-func readBody(r *http.Request) ([]byte, error) {
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, &core.Error{Message: "读取Body发生错误", Err: err}
-	}
-	r.Body = ioutil.NopCloser(bytes.NewReader(b))
-
-	return bytes.TrimSpace(b), nil
 }

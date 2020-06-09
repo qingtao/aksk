@@ -89,7 +89,7 @@ func TestNewHandlerFunc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewHandlerFunc(tt.args.ak, tt.args.sk, tt.args.opts...)
+			got, err := New(tt.args.ak, tt.args.sk, tt.args.opts...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewHandlerFunc() error = %v, wantErr %v", err, tt.wantErr)
 				return

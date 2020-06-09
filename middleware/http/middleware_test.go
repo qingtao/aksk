@@ -1,4 +1,4 @@
-package httpaksk
+package http
 
 import (
 	"context"
@@ -13,46 +13,46 @@ import (
 )
 
 func goodRequest() *http.Request {
-	requestFunc, _ := request.NewHandlerFunc("123", "456")
+	requestFunc, _ := request.New("123", "456")
 	r, _ := requestFunc(context.TODO(), "POST", httptest.DefaultRemoteAddr, []byte(`helloworld`))
 	return r
 }
 
 func goodTestRequest(url string) *http.Request {
-	requestFunc, _ := request.NewHandlerFunc("123", "456")
+	requestFunc, _ := request.New("123", "456")
 	r, _ := requestFunc(context.TODO(), "POST", url, []byte(`helloworld`))
 	return r
 }
 
 func invalidAkRequest() *http.Request {
-	requestFunc, _ := request.NewHandlerFunc("123", "456")
+	requestFunc, _ := request.New("123", "456")
 	r, _ := requestFunc(context.TODO(), "POST", httptest.DefaultRemoteAddr, []byte(`helloworld`))
 	r.Header.Set(request.HeaderAccessKey, "")
 	return r
 }
 
 func invalidSkRequest() *http.Request {
-	requestFunc, _ := request.NewHandlerFunc("wantEmpty", "456")
+	requestFunc, _ := request.New("wantEmpty", "456")
 	r, _ := requestFunc(context.TODO(), "POST", httptest.DefaultRemoteAddr, []byte(`helloworld`))
 	return r
 }
 
 func invalidTsRequest() *http.Request {
-	requestFunc, _ := request.NewHandlerFunc("123", "456")
+	requestFunc, _ := request.New("123", "456")
 	r, _ := requestFunc(context.TODO(), "POST", httptest.DefaultRemoteAddr, []byte(`helloworld`))
-	r.Header.Set(request.HeaderTimestramp, "150a0")
+	r.Header.Set(request.HeaderTimestamp, "150a0")
 	return r
 }
 
 func invalidRequestSignIsEmpty() *http.Request {
-	requestFunc, _ := request.NewHandlerFunc("123", "456")
+	requestFunc, _ := request.New("123", "456")
 	r, _ := requestFunc(context.TODO(), "POST", httptest.DefaultRemoteAddr, []byte(`helloworld`))
 	r.Header.Set(request.HeaderSignature, "")
 	return r
 }
 
 func invalidRequestSign() *http.Request {
-	requestFunc, _ := request.NewHandlerFunc("123", "456")
+	requestFunc, _ := request.New("123", "456")
 	r, _ := requestFunc(context.TODO(), "POST", httptest.DefaultRemoteAddr, []byte(`helloworld`))
 	r.Header.Set(request.HeaderSignature, "936a185caaa266bb9cbe981e9e05cb78cd732b0b3280eb944412bb6f8f8f07af")
 	return r
@@ -86,7 +86,7 @@ func TestMiddleware(t *testing.T) {
 
 	mux := http.DefaultServeMux
 	f1 := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "hello world!")
+		fmt.Fprint(w, "helloworld!")
 	}
 	mux.HandleFunc("/1", m1.WrapHandlerFunc(f1))
 	mux.HandleFunc("/11", m1.WrapHandler(&testHandler{}))
@@ -296,17 +296,14 @@ func Test_defaultErrorHandler(t *testing.T) {
 			name: "Good",
 			args: args{
 				w:   httptest.NewRecorder(),
-				err: errors.New(`错误`),
+				err: errors.New(`err`),
 			},
 		},
 		{
 			name: "Good",
 			args: args{
-				w: httptest.NewRecorder(),
-				err: &core.Error{
-					Message: "core.Error",
-					Err:     errors.New(`错误`),
-				},
+				w:   httptest.NewRecorder(),
+				err: core.NewError("core.Error", errors.New(`err`)),
 			},
 		},
 	}

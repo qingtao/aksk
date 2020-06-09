@@ -238,7 +238,7 @@ func TestAuth_EncodeToString(t *testing.T) {
 	}
 }
 
-func TestAuth_ParseTimestramp(t *testing.T) {
+func TestAuth_ParseTimestamp(t *testing.T) {
 	type fields struct {
 		enc Encoder
 		h   HashFunc
@@ -321,8 +321,8 @@ func TestAuth_ParseTimestramp(t *testing.T) {
 				h:   tt.fields.h,
 				d:   tt.fields.d,
 			}
-			if err := s.ParseTimestramp(tt.args.ts); (err != nil) != tt.wantErr {
-				t.Errorf("Auth.ParseTimestramp() error = %v, wantErr %v", err, tt.wantErr)
+			if err := s.ParseTimestamp(tt.args.ts); (err != nil) != tt.wantErr {
+				t.Errorf("Auth.ParseTimestamp() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -18,11 +18,11 @@ func TestError_Error(t *testing.T) {
 			name: "Ok",
 			fields: fields{
 				err: &Error{
-					Message: "验证失败",
-					Err:     nil,
+					Message: "valid failed",
+					err:     nil,
 				},
 			},
-			want: "验证失败",
+			want: "valid failed",
 		},
 		{
 			name: "Ok",
@@ -35,11 +35,11 @@ func TestError_Error(t *testing.T) {
 			name: "Ok",
 			fields: fields{
 				err: &Error{
-					Message: "验证失败",
-					Err:     errors.New("未找到密钥"),
+					Message: "valid falied",
+					err:     errors.New("secretkey not found"),
 				},
 			},
-			want: "验证失败: 未找到密钥",
+			want: "valid falied: secretkey not found",
 		},
 	}
 	for _, tt := range tests {

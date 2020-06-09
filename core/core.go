@@ -105,21 +105,21 @@ func New(opts ...Options) *Auth {
 	}
 }
 
-// ParseTimestramp 解析时间戳,如果时间戳不是有效的整数,或者超过指定的时间段,则认为无效
-func (s *Auth) ParseTimestramp(ts string) error {
+// ParseTimestamp 解析时间戳,如果时间戳不是有效的整数,或者超过指定的时间段,则认为无效
+func (s *Auth) ParseTimestamp(ts string) error {
 	if ts == "" {
-		return &Error{Message: timestrampEmpty}
+		return &Error{Message: timestampEmpty}
 	}
 	n, err := strconv.ParseInt(ts, 10, 64)
 	if err != nil {
-		return &Error{Message: timestrampInvalid, Err: err}
+		return &Error{Message: timestampInvalid, err: err}
 	}
 	t := time.Unix(n, 0)
 	d := time.Now().Sub(t)
 	if d > s.d {
-		return &Error{Message: timestrampExpired, Err: err}
+		return &Error{Message: timestampExpired, err: err}
 	} else if d < -s.d {
-		return &Error{Message: timestrampInvalid, Err: err}
+		return &Error{Message: timestampInvalid, err: err}
 	}
 	return nil
 }
@@ -156,7 +156,7 @@ func (s *Auth) ValidBody(b []byte, str string) error {
 	}
 	mac, err := s.enc.DecodeString(str)
 	if err != nil {
-		return &Error{Message: bodyInvalid, Err: err}
+		return &Error{Message: bodyInvalid, err: err}
 	}
 	if ok := bytes.Equal(mac, s.Sum(b)); !ok {
 		return &Error{Message: bodyInvalid}
@@ -169,7 +169,7 @@ func (s *Auth) ValidSignature(sk, sign string, elems ...string) error {
 	// 解码签名,得道原始的字节切片
 	mac, err := s.enc.DecodeString(sign)
 	if err != nil {
-		return &Error{Message: signatureInvalid, Err: err}
+		return &Error{Message: signatureInvalid, err: err}
 	}
 	if ok := hmac.Equal(mac, s.Hmac([]byte(sk), elems...)); !ok {
 		return &Error{Message: signatureInvalid}

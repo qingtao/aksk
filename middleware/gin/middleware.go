@@ -1,8 +1,6 @@
-package ginaksk
+package gin
 
 import (
-	"bytes"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/antlinker/aksk/core"
@@ -13,11 +11,11 @@ import (
 // ErrorHandler 错误处理函数
 type ErrorHandler func(c *gin.Context, err error)
 
-func handleError(c *gin.Context, err error) {
+func defaultErrorHandler(c *gin.Context, err error) {
 	if err == nil {
 		return
 	}
-	e := &core.Error{Message: err.Error(), Err: nil}
+	e := &core.Error{Message: err.Error()}
 	c.AbortWithStatusJSON(http.StatusUnauthorized, e)
 }
 
@@ -28,16 +26,18 @@ type Config struct {
 	KeyFn        core.KeyFunc
 	SkipBody     bool
 	ErrorHandler ErrorHandler
+
+	auth *core.Auth
 }
 
 // New 创建中间件
 func New(cfg Config, opts ...core.Options) gin.HandlerFunc {
 	if cfg.KeyFn == nil {
-		panic("keyFn is nil")
+		panic("Config.KeyFn is nil")
 	}
 	fn := cfg.ErrorHandler
 	if fn == nil {
-		cfg.ErrorHandler = handleError
+		fn = defaultErrorHandler
 	}
 	auth := core.New(opts...)
 	return func(c *gin.Context) {
@@ -59,8 +59,8 @@ func validRequest(c *gin.Context, auth *core.Auth, keyFn core.KeyFunc, skipBody 
 	if sk == "" {
 		return &core.Error{Message: request.SecretKeyEmpty}
 	}
-	ts := c.GetHeader(request.HeaderTimestramp)
-	if err := auth.ParseTimestramp(ts); err != nil {
+	ts := c.GetHeader(request.HeaderTimestamp)
+	if err := auth.ParseTimestamp(ts); err != nil {
 		return err
 	}
 	signature := c.GetHeader(request.HeaderSignature)
@@ -75,20 +75,9 @@ func validRequest(c *gin.Context, auth *core.Auth, keyFn core.KeyFunc, skipBody 
 	if skipBody {
 		return nil
 	}
-	b, err := readBody(c)
+	b, err := request.ReadBody(c.Request)
 	if err != nil {
 		return err
 	}
 	return auth.ValidBody(b, bodyhash)
-}
-
-// readBody 读取body
-func readBody(c *gin.Context) ([]byte, error) {
-	b, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		return nil, &core.Error{Message: "读取Body发生错误", Err: err}
-	}
-	c.Request.Body = ioutil.NopCloser(bytes.NewReader(b))
-
-	return bytes.TrimSpace(b), nil
 }
