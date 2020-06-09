@@ -1,3 +1,4 @@
+// Package gin aksk认证中间件
 package gin
 
 import (

@@ -1,3 +1,4 @@
+// Package request 包含http请求的头部常量和构造函数
 package request
 
 import (

@@ -1,3 +1,4 @@
+// Package core aksk认证的编码和hash算法定义
 package core
 
 import (
