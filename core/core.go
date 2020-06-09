@@ -64,8 +64,8 @@ type Auth struct {
 type Options struct {
 	// Encoder 初始化时使用的编码方法
 	Encoder Encoder
-	// HashFn 初始化时使用的hash算法
-	HashFn HashFunc
+	// Hash 初始化时使用的hash算法
+	Hash HashFunc
 	// 时间戳在一个时间段内有效
 	Duration time.Duration
 }
@@ -76,18 +76,18 @@ func mergeOptions(opts ...Options) Options {
 		if opt.Encoder != nil {
 			o.Encoder = opt.Encoder
 		}
-		if opt.HashFn != nil {
-			o.HashFn = opt.HashFn
+		if opt.Hash != nil {
+			o.Hash = opt.Hash
 		}
 		if opt.Duration > 0 {
 			o.Duration = opt.Duration
 		}
 	}
 	if o.Encoder == nil {
-		o.Encoder = &HexEncoder{}
+		o.Encoder = &Base64Encoder{}
 	}
-	if o.HashFn == nil {
-		o.HashFn = sha256.New
+	if o.Hash == nil {
+		o.Hash = sha256.New
 	}
 	if o.Duration <= 0 {
 		o.Duration = 2 * time.Minute
@@ -95,12 +95,12 @@ func mergeOptions(opts ...Options) Options {
 	return o
 }
 
-// New 新建认证对象
+// New 新建认证对象,默认时: 字符串编码使用base64.StdEncoding, hash算法使用sha256,时间戳有效时间2分钟
 func New(opts ...Options) *Auth {
 	o := mergeOptions(opts...)
 	return &Auth{
 		enc: o.Encoder,
-		h:   o.HashFn,
+		h:   o.Hash,
 		d:   o.Duration,
 	}
 }

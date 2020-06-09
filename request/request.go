@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/antlinker/aksk/core"
+	"github.com/qingtao/aksk/core"
 )
 
 const (

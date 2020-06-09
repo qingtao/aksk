@@ -343,7 +343,7 @@ func TestNew(t *testing.T) {
 				opts: []Options{
 					{
 						Encoder:  &Base64Encoder{},
-						HashFn:   sha1.New,
+						Hash:     sha1.New,
 						Duration: 30 * time.Second,
 					},
 				},
@@ -360,7 +360,7 @@ func TestNew(t *testing.T) {
 				opts: nil,
 			},
 			want: &Auth{
-				enc: &HexEncoder{},
+				enc: &Base64Encoder{},
 				h:   sha256.New,
 				d:   2 * time.Minute,
 			},

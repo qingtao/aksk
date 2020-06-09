@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/antlinker/aksk/core"
-	"github.com/antlinker/aksk/request"
+	"github.com/qingtao/aksk/core"
+	"github.com/qingtao/aksk/request"
 )
 
 func goodRequest() *http.Request {
@@ -81,17 +81,17 @@ func TestKeyFnIsNil(t *testing.T) {
 }
 
 func TestMiddleware(t *testing.T) {
-	cfg := Config{KeyFn: getSecretKey}
+	cfg := Config{Key: getSecretKey}
 	m1 := New(cfg)
 
 	mux := http.DefaultServeMux
 	f1 := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "helloworld!")
 	}
-	mux.HandleFunc("/1", m1.WrapHandlerFunc(f1))
-	mux.HandleFunc("/11", m1.WrapHandler(&testHandler{}))
+	mux.HandleFunc("/1", m1.HandleFunc(f1))
+	mux.HandleFunc("/11", m1.Handle(&testHandler{}))
 	mux.HandleFunc("/2", f1)
-	mux.HandleFunc("/22", m1.WrapHandler(&testHandler{}))
+	mux.HandleFunc("/22", m1.Handle(&testHandler{}))
 
 	const url = `http://example.com/`
 
@@ -178,7 +178,7 @@ func TestMiddleware_ValidRequest(t *testing.T) {
 			fields: fields{
 				opts: core.Options{},
 				cfg: Config{
-					KeyFn: getSecretKey,
+					Key: getSecretKey,
 				},
 			},
 			args: args{
@@ -191,7 +191,7 @@ func TestMiddleware_ValidRequest(t *testing.T) {
 			fields: fields{
 				opts: core.Options{},
 				cfg: Config{
-					KeyFn:    getSecretKey,
+					Key:      getSecretKey,
 					SkipBody: true,
 				},
 			},
@@ -205,7 +205,7 @@ func TestMiddleware_ValidRequest(t *testing.T) {
 			fields: fields{
 				opts: core.Options{},
 				cfg: Config{
-					KeyFn: getSecretKey,
+					Key: getSecretKey,
 				},
 			},
 			args: args{
@@ -218,7 +218,7 @@ func TestMiddleware_ValidRequest(t *testing.T) {
 			fields: fields{
 				opts: core.Options{},
 				cfg: Config{
-					KeyFn: getSecretKey,
+					Key: getSecretKey,
 				},
 			},
 			args: args{
@@ -231,7 +231,7 @@ func TestMiddleware_ValidRequest(t *testing.T) {
 			fields: fields{
 				opts: core.Options{},
 				cfg: Config{
-					KeyFn: getSecretKey,
+					Key: getSecretKey,
 				},
 			},
 			args: args{
@@ -244,7 +244,7 @@ func TestMiddleware_ValidRequest(t *testing.T) {
 			fields: fields{
 				opts: core.Options{},
 				cfg: Config{
-					KeyFn: getSecretKey,
+					Key: getSecretKey,
 				},
 			},
 			args: args{
@@ -257,7 +257,7 @@ func TestMiddleware_ValidRequest(t *testing.T) {
 			fields: fields{
 				opts: core.Options{},
 				cfg: Config{
-					KeyFn: getSecretKey,
+					Key: getSecretKey,
 				},
 			},
 			args: args{

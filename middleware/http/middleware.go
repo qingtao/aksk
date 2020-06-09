@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/antlinker/aksk/core"
-	"github.com/antlinker/aksk/request"
+	"github.com/qingtao/aksk/core"
+	"github.com/qingtao/aksk/request"
 )
 
 // ErrorHandler 错误处理函数, 接收错误处理后, 不再执行后续操作
@@ -32,18 +32,18 @@ type Middleware struct {
 
 // Config 配置
 type Config struct {
-	KeyFn        core.KeyFunc
+	Key          core.KeyFunc
 	SkipBody     bool
 	ErrorHandler ErrorHandler
 }
 
 // New 新建一个中间件
 func New(cfg Config, opts ...core.Options) *Middleware {
-	if cfg.KeyFn == nil {
-		panic("Config.KeyFn is nil")
+	if cfg.Key == nil {
+		panic("Config.Key is nil")
 	}
 	middleware := &Middleware{
-		keyFn:        cfg.KeyFn,
+		keyFn:        cfg.Key,
 		skipBody:     cfg.SkipBody,
 		errorHandler: cfg.ErrorHandler,
 		auth:         core.New(opts...),
@@ -54,8 +54,8 @@ func New(cfg Config, opts ...core.Options) *Middleware {
 	return middleware
 }
 
-// WrapHandler 验证请求, 成功后调用handler.ServeHTTP(w,r)
-func (m *Middleware) WrapHandler(handler http.Handler) http.HandlerFunc {
+// Handle 验证请求, 成功后调用handler.ServeHTTP(w,r)
+func (m *Middleware) Handle(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := m.ValidRequest(r); err != nil {
 			m.errorHandler(w, err)
@@ -65,8 +65,8 @@ func (m *Middleware) WrapHandler(handler http.Handler) http.HandlerFunc {
 	}
 }
 
-// WrapHandlerFunc 验证请求, 成功后调用handler(w,r)
-func (m *Middleware) WrapHandlerFunc(handler http.HandlerFunc) http.HandlerFunc {
+// HandleFunc 验证请求, 成功后调用handler(w,r)
+func (m *Middleware) HandleFunc(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := m.ValidRequest(r); err != nil {
 			m.errorHandler(w, err)

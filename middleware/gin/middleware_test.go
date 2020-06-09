@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/antlinker/aksk/core"
-	"github.com/antlinker/aksk/request"
 	"github.com/gin-gonic/gin"
+	"github.com/qingtao/aksk/core"
+	"github.com/qingtao/aksk/request"
 )
 
 func Test_defaultErrorHandler(t *testing.T) {
@@ -80,12 +80,12 @@ func Test_New(t *testing.T) {
 			name: "Good",
 			args: args{
 				w:   httptest.NewRecorder(),
-				cfg: Config{KeyFn: getSecretKey},
+				cfg: Config{Key: getSecretKey},
 			},
 			wantPanic: false,
 		},
 		{
-			name: "KeyFnIsNil",
+			name: "KeyIsNil",
 			args: args{
 				w:   httptest.NewRecorder(),
 				cfg: Config{},
@@ -192,7 +192,7 @@ func TestValidRequest(t *testing.T) {
 		{
 			name: "Good",
 			args: args{
-				cfg:  Config{KeyFn: getSecretKey},
+				cfg:  Config{Key: getSecretKey},
 				opts: core.Options{},
 				w:    httptest.NewRecorder(),
 				r:    goodRequest,
@@ -202,7 +202,7 @@ func TestValidRequest(t *testing.T) {
 		{
 			name: "GoodSkipBody",
 			args: args{
-				cfg:  Config{KeyFn: getSecretKey, SkipBody: true},
+				cfg:  Config{Key: getSecretKey, SkipBody: true},
 				opts: core.Options{},
 				w:    httptest.NewRecorder(),
 				r:    goodRequest,
@@ -212,7 +212,7 @@ func TestValidRequest(t *testing.T) {
 		{
 			name: "GoodCustomErrorHandler",
 			args: args{
-				cfg:  Config{KeyFn: getSecretKey, ErrorHandler: testErrorHandler},
+				cfg:  Config{Key: getSecretKey, ErrorHandler: testErrorHandler},
 				opts: core.Options{},
 				w:    httptest.NewRecorder(),
 				r:    accessKeyIsEmpty,
@@ -222,7 +222,7 @@ func TestValidRequest(t *testing.T) {
 		{
 			name: "AccessKeyIsEmpty",
 			args: args{
-				cfg:  Config{KeyFn: getSecretKey, ErrorHandler: testErrorHandler},
+				cfg:  Config{Key: getSecretKey, ErrorHandler: testErrorHandler},
 				opts: core.Options{},
 				w:    httptest.NewRecorder(),
 				r:    accessKeyIsEmpty,
@@ -232,7 +232,7 @@ func TestValidRequest(t *testing.T) {
 		{
 			name: "SecretKeyIsEmpty",
 			args: args{
-				cfg:  Config{KeyFn: getSecretKey, ErrorHandler: testErrorHandler},
+				cfg:  Config{Key: getSecretKey, ErrorHandler: testErrorHandler},
 				opts: core.Options{},
 				w:    httptest.NewRecorder(),
 				r:    secretKeyIsEmpty,
@@ -242,7 +242,7 @@ func TestValidRequest(t *testing.T) {
 		{
 			name: "InvalidTimestamp",
 			args: args{
-				cfg:  Config{KeyFn: getSecretKey, ErrorHandler: testErrorHandler},
+				cfg:  Config{Key: getSecretKey, ErrorHandler: testErrorHandler},
 				opts: core.Options{},
 				w:    httptest.NewRecorder(),
 				r:    invalidTimestamp,
@@ -252,7 +252,7 @@ func TestValidRequest(t *testing.T) {
 		{
 			name: "InvalidSignatureIsEmpty",
 			args: args{
-				cfg:  Config{KeyFn: getSecretKey, ErrorHandler: testErrorHandler},
+				cfg:  Config{Key: getSecretKey, ErrorHandler: testErrorHandler},
 				opts: core.Options{},
 				w:    httptest.NewRecorder(),
 				r:    invalidSignatureIsEmpty,
@@ -262,7 +262,7 @@ func TestValidRequest(t *testing.T) {
 		{
 			name: "InvalidSignature",
 			args: args{
-				cfg:  Config{KeyFn: getSecretKey, ErrorHandler: testErrorHandler},
+				cfg:  Config{Key: getSecretKey, ErrorHandler: testErrorHandler},
 				opts: core.Options{},
 				w:    httptest.NewRecorder(),
 				r:    invalidSignature,

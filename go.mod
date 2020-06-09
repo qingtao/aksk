@@ -1,4 +1,4 @@
-module github.com/antlinker/aksk
+module github.com/qingtao/aksk
 
 go 1.14
 

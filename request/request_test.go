@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/antlinker/aksk/core"
+	"github.com/qingtao/aksk/core"
 )
 
 func TestNewHandlerFunc(t *testing.T) {
@@ -31,7 +31,7 @@ func TestNewHandlerFunc(t *testing.T) {
 				opts: []core.Options{
 					{
 						Encoder: &core.Base64Encoder{},
-						HashFn:  sha1.New,
+						Hash:    sha1.New,
 					},
 				},
 			},
@@ -47,7 +47,7 @@ func TestNewHandlerFunc(t *testing.T) {
 				opts: []core.Options{
 					{
 						Encoder: &core.Base64Encoder{},
-						HashFn:  sha1.New,
+						Hash:    sha1.New,
 					},
 				},
 			},
@@ -63,7 +63,7 @@ func TestNewHandlerFunc(t *testing.T) {
 				opts: []core.Options{
 					{
 						Encoder: &core.Base64Encoder{},
-						HashFn:  sha1.New,
+						Hash:    sha1.New,
 					},
 				},
 			},
@@ -79,7 +79,7 @@ func TestNewHandlerFunc(t *testing.T) {
 				opts: []core.Options{
 					{
 						Encoder: &core.Base64Encoder{},
-						HashFn:  sha1.New,
+						Hash:    sha1.New,
 					},
 				},
 			},

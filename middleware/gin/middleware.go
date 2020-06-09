@@ -3,9 +3,9 @@ package gin
 import (
 	"net/http"
 
-	"github.com/antlinker/aksk/core"
-	"github.com/antlinker/aksk/request"
 	"github.com/gin-gonic/gin"
+	"github.com/qingtao/aksk/core"
+	"github.com/qingtao/aksk/request"
 )
 
 // ErrorHandler 错误处理函数
@@ -19,11 +19,11 @@ func defaultErrorHandler(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusUnauthorized, e)
 }
 
-// Validate 返回一个验证请求的gin中间件, keyFn指定了查询SecretKey的函数,如果等于nil,将panic; 如果skipBody为true, 跳过检查body的hash值是否一致; fn不为nil时,使用自定义的错误处理函数
+// Validate 返回一个验证请求的gin中间件, key指定了查询SecretKey的函数,如果等于nil,将panic; 如果skipBody为true, 跳过检查body的hash值是否一致; fn不为nil时,使用自定义的错误处理函数
 
 // Config 配置
 type Config struct {
-	KeyFn        core.KeyFunc
+	Key          core.KeyFunc
 	SkipBody     bool
 	ErrorHandler ErrorHandler
 
@@ -32,8 +32,8 @@ type Config struct {
 
 // New 创建中间件
 func New(cfg Config, opts ...core.Options) gin.HandlerFunc {
-	if cfg.KeyFn == nil {
-		panic("Config.KeyFn is nil")
+	if cfg.Key == nil {
+		panic("Config.Key is nil")
 	}
 	fn := cfg.ErrorHandler
 	if fn == nil {
@@ -41,7 +41,7 @@ func New(cfg Config, opts ...core.Options) gin.HandlerFunc {
 	}
 	auth := core.New(opts...)
 	return func(c *gin.Context) {
-		if err := validRequest(c, auth, cfg.KeyFn, cfg.SkipBody); err != nil {
+		if err := validRequest(c, auth, cfg.Key, cfg.SkipBody); err != nil {
 			fn(c, err)
 			if !c.IsAborted() {
 				c.Abort()
