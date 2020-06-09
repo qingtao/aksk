@@ -4,25 +4,25 @@ package aksk
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/qingtao/aksk/core"
-	akskgin "github.com/qingtao/aksk/middleware/gin"
-	akskhttp "github.com/qingtao/aksk/middleware/http"
+	aksk_gin "github.com/qingtao/aksk/middleware/gin"
+	aksk_http "github.com/qingtao/aksk/middleware/http"
 )
 
 // HTTPMiddleware http中间件
-type HTTPMiddleware = akskhttp.Middleware
+type HTTPMiddleware = aksk_http.Middleware
 
 // HTTPErrorHandler http中间件的错误处理函数
-type HTTPErrorHandler = akskhttp.ErrorHandler
+type HTTPErrorHandler = aksk_http.ErrorHandler
 
 // DefaultHTTPMiddleware 新的http中间件
 func DefaultHTTPMiddleware(fn core.KeyFunc, errHandler HTTPErrorHandler) *HTTPMiddleware {
-	return akskhttp.New(akskhttp.Config{Key: fn, ErrorHandler: errHandler})
+	return aksk_http.New(aksk_http.Config{Key: fn, ErrorHandler: errHandler})
 }
 
-// GINErrorHandler gin中间件的错误处理函数
-type GINErrorHandler = akskgin.ErrorHandler
+// GinErrorHandler gin中间件的错误处理函数
+type GinErrorHandler = aksk_gin.ErrorHandler
 
-// DefaultGINMiddleware 新的gin中间件
-func DefaultGINMiddleware(fn core.KeyFunc, errHandler GINErrorHandler) gin.HandlerFunc {
-	return akskgin.New(akskgin.Config{Key: fn, ErrorHandler: errHandler})
+// DefaultGinMiddleware 新的gin中间件
+func DefaultGinMiddleware(fn core.KeyFunc, errHandler GinErrorHandler) gin.HandlerFunc {
+	return aksk_gin.New(aksk_gin.Config{Key: fn, ErrorHandler: errHandler})
 }
