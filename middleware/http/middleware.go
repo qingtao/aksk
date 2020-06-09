@@ -56,14 +56,14 @@ func New(cfg Config, opts ...core.Options) *Middleware {
 }
 
 // Handle 验证请求, 成功后调用handler.ServeHTTP(w,r)
-func (m *Middleware) Handle(handler http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (m *Middleware) Handle(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := m.ValidRequest(r); err != nil {
 			m.errorHandler(w, err)
 			return
 		}
 		handler.ServeHTTP(w, r)
-	}
+	})
 }
 
 // HandleFunc 验证请求, 成功后调用handler(w,r)

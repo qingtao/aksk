@@ -89,9 +89,9 @@ func TestMiddleware(t *testing.T) {
 		fmt.Fprint(w, "helloworld!")
 	}
 	mux.HandleFunc("/1", m1.HandleFunc(f1))
-	mux.HandleFunc("/11", m1.Handle(&testHandler{}))
+	mux.Handle("/11", m1.Handle(&testHandler{}))
 	mux.HandleFunc("/2", f1)
-	mux.HandleFunc("/22", m1.Handle(&testHandler{}))
+	mux.Handle("/22", m1.Handle(&testHandler{}))
 
 	const url = `http://example.com/`
 
