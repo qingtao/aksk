@@ -27,8 +27,6 @@ type Config struct {
 	Key          core.KeyFunc
 	SkipBody     bool
 	ErrorHandler ErrorHandler
-
-	auth *core.Auth
 }
 
 // New 创建中间件
