@@ -1,6 +1,6 @@
 # aksk 实现http的中间件, 用于认证客户端请求和校验请求内容
 
-[![PkgGoDev](https://pkg.go.dev/badge/qingtao/aksk)](https://pkg.go.dev/qingtao/aksk)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/qingtao/aksk)](https://pkg.go.dev/github.com/qingtao/aksk)
 
 ## HTTP 头部
 
