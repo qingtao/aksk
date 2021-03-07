@@ -10,9 +10,9 @@ import (
 	"github.com/qingtao/aksk/v2/middleware"
 )
 
-func getSecretKey(ak string) string {
+func getSecretKey(ak string) (string, error) {
 	// TODO: get secret_key
-	return ""
+	return "", nil
 }
 
 func handleError(w http.ResponseWriter, err error) {
@@ -30,7 +30,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 func ExampleNew() {
 	config := middleware.Config{
 		// Key 获取密钥, 必须非nil
-		Key: getSecretKey,
+		KeyGetter: getSecretKey,
 		// 不验证请求Body
 		SkipBody: false,
 		// 错误处理函数

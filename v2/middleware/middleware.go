@@ -22,29 +22,30 @@ func defaultErrorHandler(w http.ResponseWriter, err error) {
 
 // Middleware 中间件
 type Middleware struct {
-	auth         *core.Auth
-	keyGetter    core.KeyGetter
-	skipBody     bool
+	Validator    request.Validator
 	errorHandler ErrorHandler
 }
 
 // Config 配置
 type Config struct {
-	Key          core.KeyGetter
+	// 可以以ak为参数查询sk
+	KeyGetter    core.KeyGetter
 	SkipBody     bool
 	ErrorHandler ErrorHandler
 }
 
 // New 新建一个中间件
 func New(cfg Config, opts ...core.Option) *Middleware {
-	if cfg.Key == nil {
+	if cfg.KeyGetter == nil {
 		panic("Config.Key is nil")
 	}
+	validator, err := request.NewValidatorFunc(cfg.KeyGetter, cfg.SkipBody, opts...)
+	if err != nil {
+		panic(err)
+	}
 	middleware := &Middleware{
-		keyGetter:    cfg.Key,
-		skipBody:     cfg.SkipBody,
+		Validator:    validator,
 		errorHandler: cfg.ErrorHandler,
-		auth:         core.New(opts...),
 	}
 	if middleware.errorHandler == nil {
 		middleware.errorHandler = defaultErrorHandler
@@ -55,7 +56,7 @@ func New(cfg Config, opts ...core.Option) *Middleware {
 // Handle 验证请求, 成功后调用handler.ServeHTTP(w,r)
 func (m *Middleware) Handle(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := request.Validate(r, m.auth, m.keyGetter, m.skipBody); err != nil {
+		if err := m.Validator.Validate(r); err != nil {
 			m.errorHandler(w, err)
 			return
 		}

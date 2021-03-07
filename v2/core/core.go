@@ -17,7 +17,7 @@ import (
 )
 
 // KeyGetter 查询accesskey,返回secretKey的函数
-type KeyGetter func(accessKey string) (secretKey string)
+type KeyGetter func(accessKey string) (secretKey string, err error)
 
 // HashFunc 返回一个hash.Hash接口
 type HashFunc func() hash.Hash

@@ -19,7 +19,7 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "hello 111")
 }
 
-func TestKeyFnIsNil(t *testing.T) {
+func TestKeyGetterIsNil(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
 			t.Errorf("expect panic, but normal")
@@ -29,22 +29,23 @@ func TestKeyFnIsNil(t *testing.T) {
 }
 
 // getSecretKey key函数
-func getSecretKey(ak string) string {
+func getSecretKey(ak string) (string, error) {
 	if ak == "wantEmpty" {
-		return ""
+		return "", nil
 	}
-	return "456"
+	return "456", nil
 }
 
 // goodTestRequest 正常的测试请求
 func goodTestRequest(url string) *http.Request {
-	requestFunc, _ := request.NewHandlerFunc("123", "456", false)
-	r, _ := requestFunc(context.TODO(), "POST", url, bytes.NewReader([]byte(`helloworld`)))
+	modifier, _ := request.NewModifierFunc("123", "456", false)
+	r, _ := http.NewRequestWithContext(context.TODO(), "POST", url, bytes.NewReader([]byte(`helloworld`)))
+	modifier(r)
 	return r
 }
 
 func TestMiddleware(t *testing.T) {
-	cfg := Config{Key: getSecretKey}
+	cfg := Config{KeyGetter: getSecretKey}
 	m1 := New(cfg)
 
 	mux := http.DefaultServeMux
