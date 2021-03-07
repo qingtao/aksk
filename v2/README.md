@@ -14,10 +14,10 @@
 
 ## 签名方法
 
-1. 假设哈希算法为`SHA256`, 编码格式为`BASE64`;
+1. 假设哈希算法为`sha256`, 编码格式为`base64`;
 2. 取出客户端访问密钥: `x-auth-access-key`;
 3. 取当前的时间戳: `x-auth-timestamp`;
 4. 生成随机字符串: `x-auth-random-str`;
-5. 如果请求的`BODY`非空, 对`BODY`计算`SHA256`的值, 并编码为`BASE64`得到:`x-auth-body-hash`;
-6. 将 `x-auth-accesskey`,`x-auth-timestamp`,`x-auth-random-str`,`x-auth-body-hash` 按照字典序排序, 拼接成字符串`s`;
-7. 取出客户端访问密钥对应的`secre_tkey`, 对`s`计算`HMACSHA256`的值, 并编码为`BASE64`, 得到 `x-auth-signature`;
+5. 如果请求的`Body`非空, 对`Body`计算`sha256`的值, 并编码为`base64`得到:`x-auth-body-hash`;
+6. 将 `x-auth-accesskey`,`x-auth-timestamp`,`x-auth-random-str`,`x-auth-body-hash` 按字符串排序, 拼接成字符串`s`;
+7. 取出客户端访问密钥对应的`secret_key`, 对`s`计算`hmac_sha256`的值, 并编码为`BASE64`, 得到 `x-auth-signature`;
