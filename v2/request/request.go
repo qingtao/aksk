@@ -3,10 +3,8 @@ package request
 
 import (
 	"bytes"
-	"crypto/rand"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -24,8 +22,6 @@ const (
 	HeaderSignature = `x-auth-signature`
 	// HeaderBodyHash Body的hash值,值取决于hash算法
 	HeaderBodyHash = `x-auth-body-hash`
-	// HeaderRandomStr 随机字符串
-	HeaderRandomStr = `x-auth-random-str`
 )
 
 // Modifier 接口实现修改请求
@@ -52,17 +48,6 @@ func NewModifierFunc(ak, sk string, skipBody bool, opts ...core.Option) (Modifie
 	}
 	a := core.New(opts...)
 	modifier := func(req *http.Request) error {
-		// 随机字符串
-		b := make([]byte, 6)
-		if _, err := io.ReadFull(rand.Reader, b); err != nil {
-			return fmt.Errorf("read random string: %w", err)
-		}
-		randomstr := a.EncodeToString(b)
-		ss := make([]string, 0, 4)
-		ss = append(ss, ak, randomstr)
-		ts := strconv.FormatInt(time.Now().Unix(), 10)
-		ss = append(ss, ts)
-
 		var bodyhash string
 		if !skipBody && req.Body != nil {
 			b, err := readBody(req)
@@ -70,21 +55,17 @@ func NewModifierFunc(ak, sk string, skipBody bool, opts ...core.Option) (Modifie
 				return err
 			}
 			bodyhash = a.EncodeToString(a.Sum(b))
-			ss = append(ss, bodyhash)
 			req.Body = ioutil.NopCloser(bytes.NewReader(b))
-		}
-		b = a.Hmac([]byte(sk), ss...)
-		// 添加ak头部
-		req.Header.Set(HeaderAccessKey, ak)
-		// 添加randomstr头部
-		req.Header.Set(HeaderRandomStr, randomstr)
-		// 添加时间戳头部
-		req.Header.Set(HeaderTimestamp, ts)
-		if bodyhash != "" {
 			// body的hash头部
 			req.Header.Set(HeaderBodyHash, bodyhash)
 		}
+		// 添加ak头部
+		req.Header.Set(HeaderAccessKey, ak)
+		// 添加时间戳头部
+		ts := strconv.FormatInt(time.Now().Unix(), 10)
+		req.Header.Set(HeaderTimestamp, ts)
 		// 添加签名头部
+		b := a.Hmac([]byte(sk), []string{ak, ts, bodyhash}...)
 		req.Header.Set(HeaderSignature, a.EncodeToString(b))
 		return nil
 	}
@@ -143,8 +124,7 @@ func NewValidatorFunc(getter core.KeyGetter, skipBody bool, opts ...core.Option)
 			return errors.New("signature is empty")
 		}
 		bodyhash := req.Header.Get(HeaderBodyHash)
-		randomstr := req.Header.Get(HeaderRandomStr)
-		if err := a.ValidSignature(sk, signature, ak, ts, randomstr, bodyhash); err != nil {
+		if err := a.ValidSignature(sk, signature, ak, ts, bodyhash); err != nil {
 			return err
 		}
 		if skipBody || req.Body == nil {

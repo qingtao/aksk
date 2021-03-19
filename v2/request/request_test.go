@@ -310,7 +310,6 @@ func TestNewModifierFunc(t *testing.T) {
 				t.Errorf("modifier.ModifyRequest error %v, wantErr %v", err, tt.wantErr)
 			}
 			t.Logf("%s: %s", HeaderAccessKey, req.Header.Get(HeaderAccessKey))
-			t.Logf("%s: %s", HeaderRandomStr, req.Header.Get(HeaderRandomStr))
 			t.Logf("%s: %s", HeaderTimestamp, req.Header.Get(HeaderTimestamp))
 			t.Logf("%s: %s", HeaderBodyHash, req.Header.Get(HeaderBodyHash))
 			t.Logf("%s: %s", HeaderSignature, req.Header.Get(HeaderSignature))
