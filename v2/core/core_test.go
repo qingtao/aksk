@@ -126,6 +126,19 @@ func TestAuth_ValidBody(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "OkEmptyBody",
+			fields: fields{
+				enc: &Base64Encoder{},
+				h:   sha256.New,
+				d:   30 * time.Second,
+			},
+			args: args{
+				b:   []byte{},
+				str: "",
+			},
+			wantErr: false,
+		},
+		{
 			name: "OkEmptyMac",
 			fields: fields{
 				enc: &Base64Encoder{},
@@ -220,6 +233,30 @@ func TestAuth_EncodeToString(t *testing.T) {
 				b: []byte(`helloworld`),
 			},
 			want: "aGVsbG93b3JsZA==",
+		},
+		{
+			name: "Ok",
+			fields: fields{
+				enc: &Base64Encoder{},
+				h:   sha256.New,
+				d:   30 * time.Second,
+			},
+			args: args{
+				b: []byte{},
+			},
+			want: "",
+		},
+		{
+			name: "Ok",
+			fields: fields{
+				enc: &HexEncoder{},
+				h:   sha256.New,
+				d:   30 * time.Second,
+			},
+			args: args{
+				b: []byte{},
+			},
+			want: "",
 		},
 	}
 	for _, tt := range tests {

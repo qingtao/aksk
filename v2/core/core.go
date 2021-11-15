@@ -141,7 +141,7 @@ func (s *Auth) ParseTimestamp(ts string) error {
 		return fmt.Errorf("timestamp %s invalid: %w", ts, err)
 	}
 	t := time.Unix(n, 0)
-	d := time.Now().Sub(t)
+	d := time.Since(t)
 	if d > s.d {
 		return fmt.Errorf("timestamp %s expired", ts)
 	} else if d < -s.d {
