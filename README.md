@@ -21,3 +21,8 @@
 5. 如果请求的`Body`非空, 对`Body`计算`sha256`的值, 并编码为`base64`得到:`x-auth-body-hash`;
 6. 将 `x-auth-accesskey`,`x-auth-timestamp`,`x-auth-random-str`,`x-auth-body-hash` 按字符串排序, 拼接成字符串`s`;
 7. 取出客户端访问密钥对应的`secret_key`, 对`s`计算`hmac_sha256`的值, 并编码为`BASE64`, 得到 `x-auth-signature`;
+
+## 注意
+
+1. v1版本的yaml依赖与gin有关，等待升级
+2. v2版本更新后yaml版本已经是`3.0.0+`
