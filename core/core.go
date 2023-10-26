@@ -7,6 +7,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"hash"
 	"sort"
 	"strconv"
@@ -14,8 +16,8 @@ import (
 	"time"
 )
 
-// KeyFunc 查询accesskey,返回secretKey的函数
-type KeyFunc func(accessKey string) (secretKey string)
+// KeyGetter 查询accesskey,返回secretKey的函数
+type KeyGetter func(accessKey string) (secretKey string, err error)
 
 // HashFunc 返回一个hash.Hash接口
 type HashFunc func() hash.Hash
@@ -63,64 +65,87 @@ type Auth struct {
 
 // Options 选项
 type Options struct {
-	// Encoder 初始化时使用的编码方法
+	// 初始化时使用的编码方法
 	Encoder Encoder
-	// Hash 初始化时使用的hash算法
+	// 初始化时使用的hash算法
 	Hash HashFunc
-	// 时间戳在一个时间段内有效
-	Duration time.Duration
+	// 检查时间戳时,允许的误差
+	AcceptableSkew time.Duration
 }
 
-func mergeOptions(opts ...Options) Options {
-	o := Options{}
+func defaultOptions() *Options {
+	return &Options{
+		Encoder:        &Base64Encoder{},
+		Hash:           sha256.New,
+		AcceptableSkew: 60 * time.Second,
+	}
+}
+
+// Option 选项
+type Option func(*Options)
+
+func mergeOptions(opts ...Option) *Options {
+	o := defaultOptions()
 	for _, opt := range opts {
-		if opt.Encoder != nil {
-			o.Encoder = opt.Encoder
+		if opt != nil {
+			opt(o)
 		}
-		if opt.Hash != nil {
-			o.Hash = opt.Hash
-		}
-		if opt.Duration > 0 {
-			o.Duration = opt.Duration
-		}
-	}
-	if o.Encoder == nil {
-		o.Encoder = &Base64Encoder{}
-	}
-	if o.Hash == nil {
-		o.Hash = sha256.New
-	}
-	if o.Duration <= 0 {
-		o.Duration = 2 * time.Minute
 	}
 	return o
 }
 
-// New 新建认证对象,默认时: 字符串编码使用base64.StdEncoding, hash算法使用sha256,时间戳有效时间2分钟
-func New(opts ...Options) *Auth {
+// WithEncoder 使用指定的编码
+func WithEncoder(enc Encoder) Option {
+	return func(o *Options) {
+		if enc != nil {
+			o.Encoder = enc
+		}
+	}
+}
+
+// WithHash 使用指定的hash函数
+func WithHash(h HashFunc) Option {
+	return func(o *Options) {
+		if h != nil {
+			o.Hash = h
+		}
+	}
+}
+
+// WithAcceptableSkew 可接受的时间误差
+func WithAcceptableSkew(d time.Duration) Option {
+	return func(o *Options) {
+		if d >= 0 {
+			o.AcceptableSkew = d
+		}
+	}
+}
+
+// New 新建认证对象,默认时: 字符串编码使用base64.StdEncoding, hash算法使用sha256,允许的时间戳误差为60秒
+func New(opts ...Option) *Auth {
 	o := mergeOptions(opts...)
 	return &Auth{
 		enc: o.Encoder,
 		h:   o.Hash,
-		d:   o.Duration,
+		d:   o.AcceptableSkew,
 	}
 }
 
-// ParseTimestamp 解析时间戳,如果时间戳不是有效的整数,或者超过指定的时间段,则认为无效
+// ParseTimestamp 解析时间戳,如果时间戳不是有效的整数,或者超过允许的时间误差,则认为是无效的
 func (s *Auth) ParseTimestamp(ts string) error {
 	if ts == "" {
-		return &Error{Message: timestampEmpty}
+		return fmt.Errorf("timetamp is empty")
 	}
 	n, err := strconv.ParseInt(ts, 10, 64)
 	if err != nil {
-		return &Error{Message: timestampInvalid, err: err}
+		return fmt.Errorf("timestamp %s invalid: %w", ts, err)
 	}
 	t := time.Unix(n, 0)
-	d := time.Now().Sub(t)
+	d := time.Since(t)
 	if d > s.d {
-		return &Error{Message: timestampExpired, err: err}
+		return fmt.Errorf("timestamp %s expired", ts)
 	} else if d < -s.d {
-		return &Error{Message: timestampInvalid, err: err}
+		return fmt.Errorf("timestamp %s invalid", ts)
 	}
 	return nil
 }
@@ -153,14 +178,14 @@ func (s *Auth) ValidBody(b []byte, str string) error {
 		return nil
 	}
 	if str == "" {
-		return &Error{Message: bodyHashEmpty}
+		return fmt.Errorf("the mac of body is empty")
 	}
 	mac, err := s.enc.DecodeString(str)
 	if err != nil {
-		return &Error{Message: bodyInvalid, err: err}
+		return fmt.Errorf("body invalid")
 	}
 	if ok := bytes.Equal(mac, s.Sum(b)); !ok {
-		return &Error{Message: bodyInvalid}
+		return fmt.Errorf("body invalid")
 	}
 	return nil
 }
@@ -170,10 +195,10 @@ func (s *Auth) ValidSignature(sk, sign string, elems ...string) error {
 	// 解码签名,得道原始的字节切片
 	mac, err := s.enc.DecodeString(sign)
 	if err != nil {
-		return &Error{Message: signatureInvalid, err: err}
+		return fmt.Errorf("signature %s invalid", sign)
 	}
 	if ok := hmac.Equal(mac, s.Hmac([]byte(sk), elems...)); !ok {
-		return &Error{Message: signatureInvalid}
+		return errors.New("signature invalid")
 	}
 	return nil
 }

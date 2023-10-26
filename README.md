@@ -1,6 +1,6 @@
-# aksk 实现http的中间件, 用于认证客户端请求和校验请求内容
+# aksk 实现 http 的中间件, 用于认证客户端请求和校验请求内容
 
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/qingtao/aksk)](https://pkg.go.dev/github.com/qingtao/aksk)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/qingtao/aksk/v2)](https://pkg.go.dev/github.com/qingtao/aksk/v2)
 
 ## HTTP 头部
 
@@ -9,20 +9,13 @@
 | x-auth-access-key | 客户端的访问密钥            |
 | x-auth-timestamp  | 请求发起时的时间戳,单位: 秒 |
 | x-auth-signature  | 请求的签名                  |
-| x-auth-body-hash  | 请求的 Body 的 Hash 值      |
-| x-auth-random-str | 随机字符串                  |
+| x-auth-body-hash  | 请求的 body 的 hash 值      |
 
 ## 签名方法
 
 1. 假设哈希算法为`sha256`, 编码格式为`base64`;
 2. 取出客户端访问密钥: `x-auth-access-key`;
 3. 取当前的时间戳: `x-auth-timestamp`;
-4. 生成随机字符串: `x-auth-random-str`;
-5. 如果请求的`Body`非空, 对`Body`计算`sha256`的值, 并编码为`base64`得到:`x-auth-body-hash`;
-6. 将 `x-auth-accesskey`,`x-auth-timestamp`,`x-auth-random-str`,`x-auth-body-hash` 按字符串排序, 拼接成字符串`s`;
-7. 取出客户端访问密钥对应的`secret_key`, 对`s`计算`hmac_sha256`的值, 并编码为`BASE64`, 得到 `x-auth-signature`;
-
-## 注意
-
-1. v1版本的yaml依赖与gin有关，等待升级
-2. v2版本更新后yaml版本已经是`3.0.0+`
+4. 如果请求的`body`非空, 对`body`计算`sha256`的值, 并编码为`base64`得到:`x-auth-body-hash`;
+5. 将 `x-auth-access-key`,`x-auth-timestamp`,`x-auth-body-hash` 按字符串排序, 使用空字符作为分隔符拼接成字符串`s`;
+6. 取出客户端访问密钥对应的`secret_key`, 对`s`计算`hmac_sha256`的值, 并编码为`base64`, 得到 `x-auth-signature`;

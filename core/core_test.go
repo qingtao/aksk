@@ -1,12 +1,12 @@
 package core
 
 import (
-	"crypto/sha1"
 	"crypto/sha256"
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAuth_ValidSignature(t *testing.T) {
@@ -76,8 +76,6 @@ func TestAuth_ValidSignature(t *testing.T) {
 				h:   tt.fields.h,
 				d:   tt.fields.d,
 			}
-			// mac := s.Hmac([]byte(tt.args.sk), tt.args.elems...)
-			// t.Logf("%s", s.EncodeToString(mac))
 			if err := s.ValidSignature(tt.args.sk, tt.args.sign, tt.args.elems...); (err != nil) != tt.wantErr {
 				t.Errorf("Auth.ValidSignature() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -124,6 +122,19 @@ func TestAuth_ValidBody(t *testing.T) {
 			args: args{
 				b:   nil,
 				str: "k2oYXKqiZrucvpgengXLeM1zKwsygOuURBK7b4+PB68=",
+			},
+			wantErr: false,
+		},
+		{
+			name: "OkEmptyBody",
+			fields: fields{
+				enc: &Base64Encoder{},
+				h:   sha256.New,
+				d:   30 * time.Second,
+			},
+			args: args{
+				b:   []byte{},
+				str: "",
 			},
 			wantErr: false,
 		},
@@ -222,6 +233,30 @@ func TestAuth_EncodeToString(t *testing.T) {
 				b: []byte(`helloworld`),
 			},
 			want: "aGVsbG93b3JsZA==",
+		},
+		{
+			name: "Ok",
+			fields: fields{
+				enc: &Base64Encoder{},
+				h:   sha256.New,
+				d:   30 * time.Second,
+			},
+			args: args{
+				b: []byte{},
+			},
+			want: "",
+		},
+		{
+			name: "Ok",
+			fields: fields{
+				enc: &HexEncoder{},
+				h:   sha256.New,
+				d:   30 * time.Second,
+			},
+			args: args{
+				b: []byte{},
+			},
+			want: "",
 		},
 	}
 	for _, tt := range tests {
@@ -330,7 +365,8 @@ func TestAuth_ParseTimestamp(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	type args struct {
-		opts []Options
+		opts []Option
+		s    string
 	}
 	tests := []struct {
 		name string
@@ -340,17 +376,16 @@ func TestNew(t *testing.T) {
 		{
 			name: "Ok",
 			args: args{
-				opts: []Options{
-					{
-						Encoder:  &Base64Encoder{},
-						Hash:     sha1.New,
-						Duration: 30 * time.Second,
-					},
+				opts: []Option{
+					WithEncoder(&Base64Encoder{}),
+					WithHash(sha256.New),
+					WithAcceptableSkew(30 * time.Second),
 				},
+				s: "123",
 			},
 			want: &Auth{
 				enc: &Base64Encoder{},
-				h:   sha1.New,
+				h:   sha256.New,
 				d:   30 * time.Second,
 			},
 		},
@@ -362,28 +397,17 @@ func TestNew(t *testing.T) {
 			want: &Auth{
 				enc: &Base64Encoder{},
 				h:   sha256.New,
-				d:   2 * time.Minute,
+				d:   1 * time.Minute,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := New(tt.args.opts...)
-			gotEncType := reflect.TypeOf(got.enc)
-			wantEncType := reflect.TypeOf(tt.want.enc)
-			if gotEncType != wantEncType {
-				t.Errorf("got encoder %v, but expect %v", gotEncType, wantEncType)
-				return
-			}
-			gotHashType := reflect.TypeOf(got.h)
-			wantHashType := reflect.TypeOf(tt.want.h)
-			if gotHashType != wantHashType {
-				t.Errorf("got encoder %v, but expect %v", gotEncType, wantEncType)
-				return
-			}
-			if got.d != tt.want.d {
-				t.Errorf("got duration %v, bug expect %v", got.d, tt.want.d)
-			}
+			b := []byte(tt.args.s)
+			assert.Equal(t, tt.want.enc.EncodeToString(b), got.enc.EncodeToString(b))
+			assert.Equal(t, tt.want.h().Sum(b), got.h().Sum(b))
+			assert.Equal(t, tt.want.d, got.d)
 		})
 	}
 }
