@@ -20,12 +20,9 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestKeyGetterIsNil(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.Errorf("expect panic, but normal")
-		}
-	}()
-	_ = New(Config{})
+	if _, err := New(Config{}); err == nil {
+		t.Errorf("expect error, but got nil")
+	}
 }
 
 // getSecretKey key函数
@@ -38,15 +35,18 @@ func getSecretKey(ak string) (string, error) {
 
 // goodTestRequest 正常的测试请求
 func goodTestRequest(url string) *http.Request {
-	modifier, _ := request.NewModifierFunc("123", "456", false)
+	modifier, _ := request.NewModifierFunc("123", "456")
 	r, _ := http.NewRequestWithContext(context.TODO(), "POST", url, bytes.NewReader([]byte(`helloworld`)))
 	modifier(r)
 	return r
 }
 
 func TestMiddleware(t *testing.T) {
-	cfg := Config{KeyGetter: getSecretKey}
-	m1 := New(cfg)
+	cfg := Config{Config: request.Config{KeyGetter: getSecretKey}}
+	m1, err := New(cfg)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
 
 	mux := http.DefaultServeMux
 	f1 := func(w http.ResponseWriter, r *http.Request) {

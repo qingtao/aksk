@@ -2,6 +2,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -28,20 +29,20 @@ type Middleware struct {
 
 // Config 配置
 type Config struct {
-	// 可以以ak为参数查询sk
-	KeyGetter    core.KeyGetter
-	SkipBody     bool
+	request.Config
 	ErrorHandler ErrorHandler
 }
 
 // New 新建一个中间件
-func New(cfg Config, opts ...core.Option) *Middleware {
+// 返回的 error 来自 request.NewValidator, 例如 KeyGetter 为 nil 或签名方法无效
+func New(cfg Config, opts ...core.OptionFunc) (*Middleware, error) {
 	if cfg.KeyGetter == nil {
-		panic("Config.Key is nil")
+		return nil, errors.New("Config.KeyGetter is nil")
 	}
-	validator, err := request.NewValidatorFunc(cfg.KeyGetter, cfg.SkipBody, opts...)
+
+	validator, err := request.NewValidator(cfg.Config, opts...)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	middleware := &Middleware{
 		Validator:    validator,
@@ -50,7 +51,7 @@ func New(cfg Config, opts ...core.Option) *Middleware {
 	if middleware.errorHandler == nil {
 		middleware.errorHandler = defaultErrorHandler
 	}
-	return middleware
+	return middleware, nil
 }
 
 // Handle 验证请求, 成功后调用handler.ServeHTTP(w,r)

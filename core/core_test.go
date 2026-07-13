@@ -11,9 +11,10 @@ import (
 
 func TestAuth_ValidSignature(t *testing.T) {
 	type fields struct {
-		enc Encoder
-		h   HashFunc
-		d   time.Duration
+		enc            Encoder
+		hashFunc       HashFunc
+		acceptableSkew time.Duration
+		signMethod     string
 	}
 	type args struct {
 		sk    string
@@ -29,13 +30,14 @@ func TestAuth_ValidSignature(t *testing.T) {
 		{
 			name: "Ok",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
+				signMethod:     SignMethodHMACSHA256,
 			},
 			args: args{
 				sk:    "123",
-				sign:  "TwcsQLXoVS8PeAJYptZqZuCVHfIkMWwuWF4k0EvKRVA=",
+				sign:  "8qoXQ5qeZiCxxK6L7dZZh7kPqluAIdrBD82dbrcPWlI=",
 				elems: []string{"123456", "helloworld"},
 			},
 			wantErr: false,
@@ -43,9 +45,10 @@ func TestAuth_ValidSignature(t *testing.T) {
 		{
 			name: "FailedInvalidSignStr",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
+				signMethod:     SignMethodHMACSHA256,
 			},
 			args: args{
 				sk:    "123",
@@ -57,9 +60,10 @@ func TestAuth_ValidSignature(t *testing.T) {
 		{
 			name: "FailedInvalidSign",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
+				signMethod:     SignMethodHMACSHA256,
 			},
 			args: args{
 				sk:    "123",
@@ -72,136 +76,18 @@ func TestAuth_ValidSignature(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Auth{
-				enc: tt.fields.enc,
-				h:   tt.fields.h,
-				d:   tt.fields.d,
+				enc:            tt.fields.enc,
+				acceptableSkew: tt.fields.acceptableSkew,
+				signMethod:     tt.fields.signMethod,
 			}
-			if err := s.ValidSignature(tt.args.sk, tt.args.sign, tt.args.elems...); (err != nil) != tt.wantErr {
+			// 为HMAC签名创建signer
+			if isHMAC(tt.fields.signMethod) {
+				s.signer = NewHMACSigner(tt.fields.hashFunc, tt.fields.signMethod)
+			}
+			// 使用固定的 ak 进行测试
+			ak := "test-ak"
+			if err := s.Verify(ak, tt.args.sk, tt.args.sign, tt.args.elems...); (err != nil) != tt.wantErr {
 				t.Errorf("Auth.ValidSignature() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestAuth_ValidBody(t *testing.T) {
-	type fields struct {
-		enc Encoder
-		h   HashFunc
-		d   time.Duration
-	}
-	type args struct {
-		b   []byte
-		str string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Ok",
-			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
-			},
-			args: args{
-				b:   []byte(`helloworld`),
-				str: "k2oYXKqiZrucvpgengXLeM1zKwsygOuURBK7b4+PB68=",
-			},
-			wantErr: false,
-		},
-		{
-			name: "OkEmptyBody",
-			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
-			},
-			args: args{
-				b:   nil,
-				str: "k2oYXKqiZrucvpgengXLeM1zKwsygOuURBK7b4+PB68=",
-			},
-			wantErr: false,
-		},
-		{
-			name: "OkEmptyBody",
-			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
-			},
-			args: args{
-				b:   []byte{},
-				str: "",
-			},
-			wantErr: false,
-		},
-		{
-			name: "OkEmptyMac",
-			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
-			},
-			args: args{
-				b:   []byte(`helloworld`),
-				str: "",
-			},
-			wantErr: true,
-		},
-		{
-			name: "FailedInvalidStr",
-			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
-			},
-			args: args{
-				b:   []byte(`helloworld`),
-				str: "TwcsQLXoVS8PeAJYtZqZuCVHfIkMWwuWF4k0EvKRVA=",
-			},
-			wantErr: true,
-		},
-		{
-			name: "FailedInvalidMac",
-			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
-			},
-			args: args{
-				b:   []byte(`helloworld`),
-				str: "TwcsQLXoVS8PeAJYptZqZuCVHfIkMWwuWF4k0EvKRVA=",
-			},
-			wantErr: true,
-		},
-		{
-			name: "OkHexEncoder",
-			fields: fields{
-				enc: &HexEncoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
-			},
-			args: args{
-				b:   []byte(`helloworld`),
-				str: "936a185caaa266bb9cbe981e9e05cb78cd732b0b3280eb944412bb6f8f8f07af",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &Auth{
-				enc: tt.fields.enc,
-				h:   tt.fields.h,
-				d:   tt.fields.d,
-			}
-			str := s.Sum(tt.args.b)
-			t.Logf("%s", s.EncodeToString(str))
-			if err := s.ValidBody(tt.args.b, tt.args.str); (err != nil) != tt.wantErr {
-				t.Errorf("Auth.ValidBody() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -209,9 +95,9 @@ func TestAuth_ValidBody(t *testing.T) {
 
 func TestAuth_EncodeToString(t *testing.T) {
 	type fields struct {
-		enc Encoder
-		h   HashFunc
-		d   time.Duration
+		enc            Encoder
+		hashFunc       HashFunc
+		acceptableSkew time.Duration
 	}
 	type args struct {
 		b []byte
@@ -225,9 +111,9 @@ func TestAuth_EncodeToString(t *testing.T) {
 		{
 			name: "Ok",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
 			},
 			args: args{
 				b: []byte(`helloworld`),
@@ -237,9 +123,9 @@ func TestAuth_EncodeToString(t *testing.T) {
 		{
 			name: "Ok",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
 			},
 			args: args{
 				b: []byte{},
@@ -249,9 +135,9 @@ func TestAuth_EncodeToString(t *testing.T) {
 		{
 			name: "Ok",
 			fields: fields{
-				enc: &HexEncoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &HexEncoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
 			},
 			args: args{
 				b: []byte{},
@@ -262,9 +148,8 @@ func TestAuth_EncodeToString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Auth{
-				enc: tt.fields.enc,
-				h:   tt.fields.h,
-				d:   tt.fields.d,
+				enc:            tt.fields.enc,
+				acceptableSkew: tt.fields.acceptableSkew,
 			}
 			if got := s.EncodeToString(tt.args.b); got != tt.want {
 				t.Errorf("Auth.EncodeToString() = %v, want %v", got, tt.want)
@@ -275,9 +160,9 @@ func TestAuth_EncodeToString(t *testing.T) {
 
 func TestAuth_ParseTimestamp(t *testing.T) {
 	type fields struct {
-		enc Encoder
-		h   HashFunc
-		d   time.Duration
+		enc            Encoder
+		hashFunc       HashFunc
+		acceptableSkew time.Duration
 	}
 	type args struct {
 		ts string
@@ -291,9 +176,9 @@ func TestAuth_ParseTimestamp(t *testing.T) {
 		{
 			name: "Ok",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
 			},
 			args: args{
 				ts: strconv.FormatInt(time.Now().Add(20*time.Second).Unix(), 10),
@@ -303,9 +188,9 @@ func TestAuth_ParseTimestamp(t *testing.T) {
 		{
 			name: "Expired",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
 			},
 			args: args{
 				ts: "1570000000",
@@ -315,9 +200,9 @@ func TestAuth_ParseTimestamp(t *testing.T) {
 		{
 			name: "TooNew",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
 			},
 			args: args{
 				ts: strconv.FormatInt(time.Now().Add(60*time.Second).Unix(), 10),
@@ -327,9 +212,9 @@ func TestAuth_ParseTimestamp(t *testing.T) {
 		{
 			name: "Empty",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
 			},
 			args: args{
 				ts: "",
@@ -339,9 +224,9 @@ func TestAuth_ParseTimestamp(t *testing.T) {
 		{
 			name: "Invalid",
 			fields: fields{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				hashFunc:       sha256.New,
+				acceptableSkew: 30 * time.Second,
 			},
 			args: args{
 				ts: "1570000a00",
@@ -352,9 +237,8 @@ func TestAuth_ParseTimestamp(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Auth{
-				enc: tt.fields.enc,
-				h:   tt.fields.h,
-				d:   tt.fields.d,
+				enc:            tt.fields.enc,
+				acceptableSkew: tt.fields.acceptableSkew,
 			}
 			if err := s.ParseTimestamp(tt.args.ts); (err != nil) != tt.wantErr {
 				t.Errorf("Auth.ParseTimestamp() error = %v, wantErr %v", err, tt.wantErr)
@@ -365,49 +249,151 @@ func TestAuth_ParseTimestamp(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	type args struct {
-		opts []Option
+		opts []OptionFunc
 		s    string
 	}
 	tests := []struct {
-		name string
-		args args
-		want *Auth
+		name    string
+		args    args
+		want    *Auth
+		wantErr bool
 	}{
 		{
 			name: "Ok",
 			args: args{
-				opts: []Option{
+				opts: []OptionFunc{
+					WithSignMethod(SignMethodHMACSHA256),
 					WithEncoder(&Base64Encoder{}),
-					WithHash(sha256.New),
 					WithAcceptableSkew(30 * time.Second),
 				},
 				s: "123",
 			},
 			want: &Auth{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   30 * time.Second,
+				enc:            &Base64Encoder{},
+				acceptableSkew: 30 * time.Second,
+				signMethod:     SignMethodHMACSHA256,
 			},
+			wantErr: false,
 		},
 		{
-			name: "Default",
+			name: "DefaultHMAC",
 			args: args{
-				opts: nil,
+				opts: []OptionFunc{
+					WithEncoder(&Base64Encoder{}),
+				},
+				s: "123",
 			},
 			want: &Auth{
-				enc: &Base64Encoder{},
-				h:   sha256.New,
-				d:   1 * time.Minute,
+				enc:            &Base64Encoder{},
+				acceptableSkew: 60 * time.Second,
+				signMethod:     SignMethodHMACSHA256,
 			},
+			wantErr: false,
+		},
+		{
+			name: SignMethodHMACSHA384,
+			args: args{
+				opts: []OptionFunc{
+					WithSignMethod(SignMethodHMACSHA384),
+					WithEncoder(&Base64Encoder{}),
+				},
+				s: "123",
+			},
+			want: &Auth{
+				enc:            &Base64Encoder{},
+				acceptableSkew: 60 * time.Second,
+				signMethod:     SignMethodHMACSHA384,
+			},
+			wantErr: false,
+		},
+		{
+			name: SignMethodHMACSHA512,
+			args: args{
+				opts: []OptionFunc{
+					WithSignMethod(SignMethodHMACSHA512),
+					WithEncoder(&Base64Encoder{}),
+				},
+				s: "123",
+			},
+			want: &Auth{
+				enc:            &Base64Encoder{},
+				acceptableSkew: 60 * time.Second,
+				signMethod:     SignMethodHMACSHA512,
+			},
+			wantErr: false,
+		},
+		{
+			name: "InvalidSignMethod",
+			args: args{
+				opts: []OptionFunc{
+					WithSignMethod("invalid"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: SignMethodRSASHA256,
+			args: args{
+				opts: []OptionFunc{
+					WithSignMethod(SignMethodRSASHA256),
+					WithEncoder(&Base64Encoder{}),
+				},
+				s: "123",
+			},
+			want: &Auth{
+				enc:            &Base64Encoder{},
+				acceptableSkew: 60 * time.Second,
+				signMethod:     SignMethodRSASHA256,
+			},
+			wantErr: false,
+		},
+		{
+			name: SignMethodECDSASHA256,
+			args: args{
+				opts: []OptionFunc{
+					WithSignMethod(SignMethodECDSASHA256),
+					WithEncoder(&Base64Encoder{}),
+				},
+				s: "123",
+			},
+			want: &Auth{
+				enc:            &Base64Encoder{},
+				acceptableSkew: 60 * time.Second,
+				signMethod:     SignMethodECDSASHA256,
+			},
+			wantErr: false,
+		},
+		{
+			name: SignMethodEd25519,
+			args: args{
+				opts: []OptionFunc{
+					WithSignMethod(SignMethodEd25519),
+					WithEncoder(&Base64Encoder{}),
+				},
+				s: "123",
+			},
+			want: &Auth{
+				enc:            &Base64Encoder{},
+				acceptableSkew: 60 * time.Second,
+				signMethod:     SignMethodEd25519,
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := New(tt.args.opts...)
+			got, err := New(tt.args.opts...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				return
+			}
 			b := []byte(tt.args.s)
 			assert.Equal(t, tt.want.enc.EncodeToString(b), got.enc.EncodeToString(b))
-			assert.Equal(t, tt.want.h().Sum(b), got.h().Sum(b))
-			assert.Equal(t, tt.want.d, got.d)
+			assert.Equal(t, tt.want.acceptableSkew, got.acceptableSkew)
+			assert.Equal(t, tt.want.signMethod, got.signMethod)
 		})
 	}
 }
